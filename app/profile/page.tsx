@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,18 +11,19 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Navbar } from "@/components/navbar"
 import { useRouter } from "next/navigation"
-import { User } from "lucide-react"
+import { User, Upload } from "lucide-react"
 
 export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("")
   const [username, setUsername] = useState("")
   const [avatarUrl, setAvatarUrl] = useState("")
-  const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -48,6 +49,37 @@ export default function ProfilePage() {
     }
   }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setError(null)
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/avatar/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Upload failed")
+      }
+
+      const data = await response.json()
+      setAvatarUrl(data.url)
+      setSuccess("Tải avatar lên thành công!")
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Đã xảy ra lỗi khi tải avatar")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -64,7 +96,6 @@ export default function ProfilePage() {
         .from("profiles")
         .update({
           display_name: displayName,
-          username: username,
           avatar_url: avatarUrl,
         })
         .eq("id", user.id)
@@ -97,7 +128,6 @@ export default function ProfilePage() {
 
       if (updateError) throw updateError
       setSuccess("Đổi mật khẩu thành công!")
-      setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")
     } catch (error: unknown) {
@@ -120,7 +150,7 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Thông tin cá nhân</CardTitle>
-              <CardDescription>Cập nhật avatar, tên hiển thị và tên đăng nhập</CardDescription>
+              <CardDescription>Cập nhật avatar và tên hiển thị</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdateProfile} className="space-y-6">
@@ -132,14 +162,26 @@ export default function ProfilePage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <Label htmlFor="avatar-url">URL Avatar</Label>
-                    <Input
-                      id="avatar-url"
-                      type="url"
-                      placeholder="https://example.com/avatar.jpg"
-                      value={avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
+                    <Label htmlFor="avatar-upload">Avatar</Label>
+                    <input
+                      ref={fileInputRef}
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarUpload}
                     />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full mt-2 bg-transparent"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {isUploading ? "Đang tải lên..." : "Tải ảnh lên"}
+                    </Button>
+                    <p className="text-sm text-muted-foreground mt-1">Tối đa 5MB, định dạng JPG, PNG, GIF</p>
                   </div>
                 </div>
 
@@ -157,15 +199,8 @@ export default function ProfilePage() {
 
                 <div className="grid gap-2">
                   <Label htmlFor="username">Tên đăng nhập</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="nguyenvana"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground">Tên đăng nhập dùng để đăng nhập vào hệ thống</p>
+                  <Input id="username" type="text" value={username} disabled className="bg-muted" />
+                  <p className="text-sm text-muted-foreground">Tên đăng nhập không thể thay đổi</p>
                 </div>
 
                 {error && <p className="text-sm text-destructive">{error}</p>}

@@ -15,6 +15,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [displayName, setDisplayName] = useState("")
+  const [username, setUsername] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -40,6 +41,7 @@ export default function SignUpPage() {
           emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
           data: {
             display_name: displayName,
+            username: username,
           },
         },
       })
@@ -72,6 +74,17 @@ export default function SignUpPage() {
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="username">Tên đăng nhập</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="nguyenvana"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">

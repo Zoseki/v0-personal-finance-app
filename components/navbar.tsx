@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { LogOut, Plus, Home, Wallet } from "lucide-react"
+import { LogOut, Plus, Home, Wallet, User } from "lucide-react"
 
 export function Navbar() {
   const router = useRouter()
@@ -40,6 +40,12 @@ export function Navbar() {
               <Link href="/my-expenses">
                 <Wallet className="mr-2 h-4 w-4" />
                 Chi tiêu của tôi
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/profile">
+                <User className="mr-2 h-4 w-4" />
+                Cá nhân
               </Link>
             </Button>
           </div>

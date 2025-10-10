@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [emailOrUsername, setEmailOrUsername] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,8 +27,23 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      let loginEmail = emailOrUsername
+
+      if (!emailOrUsername.includes("@")) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email")
+          .eq("username", emailOrUsername)
+          .single()
+
+        if (!profile) {
+          throw new Error("Tên đăng nhập không tồn tại")
+        }
+        loginEmail = profile.email
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: loginEmail,
         password,
         options: {
           persistSession: rememberMe,
@@ -50,20 +65,20 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">Đăng nhập</CardTitle>
-            <CardDescription>Nhập email và mật khẩu để đăng nhập</CardDescription>
+            <CardDescription>Nhập email/tên đăng nhập và mật khẩu để đăng nhập</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email hoặc tên đăng nhập</Label>
                   <Input
                     id="email"
-                    type="email"
-                    placeholder="email@example.com"
+                    type="text"
+                    placeholder="email@example.com hoặc nguyenvana"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={emailOrUsername}
+                    onChange={(e) => setEmailOrUsername(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">

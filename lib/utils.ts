@@ -6,5 +6,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatAmount(amount: number): string {
-  return `${Math.round(amount / 1000)}k`
+  return `${amount}k`
 }

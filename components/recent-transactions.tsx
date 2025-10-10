@@ -25,6 +25,7 @@ export async function RecentTransactions({ userId }: RecentTransactionsProps) {
         id,
         amount,
         is_settled,
+        item_description,
         profiles!transaction_splits_debtor_id_fkey(display_name)
       )
     `,
@@ -49,6 +50,7 @@ export async function RecentTransactions({ userId }: RecentTransactionsProps) {
                 id: string
                 amount: number
                 is_settled: boolean
+                item_description: string
                 profiles: { display_name: string }
               }>
 
@@ -58,7 +60,9 @@ export async function RecentTransactions({ userId }: RecentTransactionsProps) {
               return (
                 <div key={transaction.id} className="flex items-start justify-between border-b pb-4 last:border-0">
                   <div className="space-y-1">
-                    <p className="font-medium">{transaction.description}</p>
+                    {transaction.description && transaction.description !== "Chi tiêu" && (
+                      <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(transaction.created_at), {
                         addSuffix: true,
@@ -68,7 +72,7 @@ export async function RecentTransactions({ userId }: RecentTransactionsProps) {
                     <div className="flex flex-wrap gap-1">
                       {splits.map((split) => (
                         <Badge key={split.id} variant={split.is_settled ? "default" : "secondary"} className="text-xs">
-                          {split.profiles.display_name}: {formatAmount(Number(split.amount))}
+                          {split.profiles.display_name}: {split.item_description} - {formatAmount(Number(split.amount))}
                         </Badge>
                       ))}
                     </div>

@@ -42,6 +42,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
       id,
       amount,
       is_settled,
+      item_description,
       created_at,
       transactions!inner(
         id,
@@ -64,6 +65,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
       id,
       amount,
       is_settled,
+      item_description,
       created_at,
       transactions!inner(
         id,
@@ -136,7 +138,10 @@ export default async function DebtDetailPage({ params }: PageProps) {
                   return (
                     <div key={split.id} className="flex items-start justify-between border-b pb-4 last:border-0">
                       <div className="space-y-1">
-                        <p className="font-medium">{transaction.description}</p>
+                        <p className="font-medium">{split.item_description}</p>
+                        {transaction.description && transaction.description !== "Chi tiêu" && (
+                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
                             addSuffix: true,
@@ -183,7 +188,10 @@ export default async function DebtDetailPage({ params }: PageProps) {
                   return (
                     <div key={split.id} className="flex items-start justify-between border-b pb-4 last:border-0">
                       <div className="space-y-1">
-                        <p className="font-medium">{transaction.description}</p>
+                        <p className="font-medium">{split.item_description}</p>
+                        {transaction.description && transaction.description !== "Chi tiêu" && (
+                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
                             addSuffix: true,

@@ -31,6 +31,7 @@ export default async function MyExpensesPage() {
         id,
         amount,
         is_settled,
+        item_description,
         profiles!transaction_splits_debtor_id_fkey(id, display_name)
       )
     `,
@@ -46,6 +47,7 @@ export default async function MyExpensesPage() {
       id,
       amount,
       is_settled,
+      item_description,
       created_at,
       transactions!inner(
         id,
@@ -116,6 +118,7 @@ export default async function MyExpensesPage() {
                     id: string
                     amount: number
                     is_settled: boolean
+                    item_description: string
                     profiles: { id: string; display_name: string }
                   }>
 
@@ -125,7 +128,9 @@ export default async function MyExpensesPage() {
                   return (
                     <div key={transaction.id} className="flex items-start justify-between border-b pb-4 last:border-0">
                       <div className="space-y-1">
-                        <p className="font-medium">{transaction.description}</p>
+                        {transaction.description && transaction.description !== "Chi tiêu" && (
+                          <p className="font-medium">{transaction.description}</p>
+                        )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
                             addSuffix: true,
@@ -139,7 +144,8 @@ export default async function MyExpensesPage() {
                               variant={split.is_settled ? "default" : "secondary"}
                               className="text-xs"
                             >
-                              {split.profiles.display_name}: {formatAmount(Number(split.amount))}
+                              {split.profiles.display_name}: {split.item_description} -{" "}
+                              {formatAmount(Number(split.amount))}
                             </Badge>
                           ))}
                         </div>
@@ -180,7 +186,10 @@ export default async function MyExpensesPage() {
                   return (
                     <div key={split.id} className="flex items-start justify-between border-b pb-4 last:border-0">
                       <div className="space-y-1">
-                        <p className="font-medium">{transaction.description}</p>
+                        <p className="font-medium">{split.item_description}</p>
+                        {transaction.description && transaction.description !== "Chi tiêu" && (
+                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        )}
                         <p className="text-sm text-muted-foreground">Trả cho: {transaction.profiles.display_name}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {

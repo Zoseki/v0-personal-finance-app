@@ -43,6 +43,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
       amount,
       is_settled,
       item_description,
+      image_url,
       created_at,
       transactions!inner(
         id,
@@ -66,6 +67,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
       amount,
       is_settled,
       item_description,
+      image_url,
       created_at,
       transactions!inner(
         id,
@@ -137,10 +139,17 @@ export default async function DebtDetailPage({ params }: PageProps) {
 
                   return (
                     <div key={split.id} className="flex items-start justify-between border-b pb-4 last:border-0">
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1">
                         <p className="font-medium">{split.item_description}</p>
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        )}
+                        {split.image_url && (
+                          <img
+                            src={split.image_url || "/placeholder.svg"}
+                            alt={split.item_description}
+                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
+                          />
                         )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
@@ -187,10 +196,17 @@ export default async function DebtDetailPage({ params }: PageProps) {
 
                   return (
                     <div key={split.id} className="flex items-start justify-between border-b pb-4 last:border-0">
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1">
                         <p className="font-medium">{split.item_description}</p>
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        )}
+                        {split.image_url && (
+                          <img
+                            src={split.image_url || "/placeholder.svg"}
+                            alt={split.item_description}
+                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
+                          />
                         )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {

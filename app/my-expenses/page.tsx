@@ -32,6 +32,7 @@ export default async function MyExpensesPage() {
         amount,
         is_settled,
         item_description,
+        image_url,
         profiles!transaction_splits_debtor_id_fkey(id, display_name)
       )
     `,
@@ -48,6 +49,7 @@ export default async function MyExpensesPage() {
       amount,
       is_settled,
       item_description,
+      image_url,
       created_at,
       transactions!inner(
         id,
@@ -119,6 +121,7 @@ export default async function MyExpensesPage() {
                     amount: number
                     is_settled: boolean
                     item_description: string
+                    image_url?: string
                     profiles: { id: string; display_name: string }
                   }>
 
@@ -126,36 +129,52 @@ export default async function MyExpensesPage() {
                   const totalCount = splits.length
 
                   return (
-                    <div key={transaction.id} className="flex items-start justify-between border-b pb-4 last:border-0">
-                      <div className="space-y-1">
-                        {transaction.description && transaction.description !== "Chi tiêu" && (
-                          <p className="font-medium">{transaction.description}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(transaction.created_at), {
-                            addSuffix: true,
-                            locale: vi,
-                          })}
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {splits.map((split) => (
-                            <Badge
-                              key={split.id}
-                              variant={split.is_settled ? "default" : "secondary"}
-                              className="text-xs"
-                            >
-                              {split.profiles.display_name}: {split.item_description} -{" "}
-                              {formatAmount(Number(split.amount))}
-                            </Badge>
-                          ))}
+                    <div key={transaction.id} className="space-y-3 border-b pb-4 last:border-0">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          {transaction.description && transaction.description !== "Chi tiêu" && (
+                            <p className="font-medium">{transaction.description}</p>
+                          )}
+                          <p className="text-sm text-muted-foreground">
+                            {formatDistanceToNow(new Date(transaction.created_at), {
+                              addSuffix: true,
+                              locale: vi,
+                            })}
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {splits.map((split) => (
+                              <Badge
+                                key={split.id}
+                                variant={split.is_settled ? "default" : "secondary"}
+                                className="text-xs"
+                              >
+                                {split.profiles.display_name}: {split.item_description} -{" "}
+                                {formatAmount(Number(split.amount))}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{formatAmount(Number(transaction.total_amount))}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {settledCount}/{totalCount} đã trả
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{formatAmount(Number(transaction.total_amount))}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {settledCount}/{totalCount} đã trả
-                        </p>
-                      </div>
+                      {splits.some((s) => s.image_url) && (
+                        <div className="flex gap-2 flex-wrap">
+                          {splits
+                            .filter((s) => s.image_url)
+                            .map((split) => (
+                              <img
+                                key={split.id}
+                                src={split.image_url || "/placeholder.svg"}
+                                alt={split.item_description}
+                                className="w-24 h-24 object-cover rounded-md"
+                              />
+                            ))}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -185,10 +204,17 @@ export default async function MyExpensesPage() {
 
                   return (
                     <div key={split.id} className="flex items-start justify-between border-b pb-4 last:border-0">
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1">
                         <p className="font-medium">{split.item_description}</p>
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        )}
+                        {split.image_url && (
+                          <img
+                            src={split.image_url || "/placeholder.svg"}
+                            alt={split.item_description}
+                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
+                          />
                         )}
                         <p className="text-sm text-muted-foreground">Trả cho: {transaction.profiles.display_name}</p>
                         <p className="text-sm text-muted-foreground">

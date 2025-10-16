@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SettleDebtButton } from "@/components/settle-debt-button"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
@@ -95,6 +96,10 @@ export default async function DebtDetailPage({ params }: PageProps) {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={person.avatar_url || undefined} alt={person.display_name} />
+            <AvatarFallback>{person.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
           <div>
             <h1 className="text-3xl font-bold">Chi tiết công nợ với {person.display_name}</h1>
             <p className="text-muted-foreground">Xem và quản lý các khoản nợ</p>

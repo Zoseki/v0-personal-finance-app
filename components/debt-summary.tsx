@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { formatAmount } from "@/lib/utils"
@@ -12,6 +13,7 @@ type DebtSummaryProps = {
 type DebtInfo = {
   person_id: string
   person_name: string
+  person_avatar: string | null
   total_amount: number
   type: "owes_me" | "i_owe"
 }
@@ -27,7 +29,7 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
       debtor_id,
       amount,
       is_settled,
-      profiles!transaction_splits_debtor_id_fkey(id, display_name),
+      profiles!transaction_splits_debtor_id_fkey(id, display_name, avatar_url),
       transactions!inner(payer_id)
     `,
     )
@@ -42,7 +44,7 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
       debtor_id,
       amount,
       is_settled,
-      transactions!inner(payer_id, profiles!transactions_payer_id_fkey(id, display_name))
+      transactions!inner(payer_id, profiles!transactions_payer_id_fkey(id, display_name, avatar_url))
     `,
     )
     .eq("debtor_id", userId)
@@ -54,7 +56,7 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
   // Process owes me
   if (owesMe) {
     for (const item of owesMe) {
-      const profile = item.profiles as unknown as { id: string; display_name: string }
+      const profile = item.profiles as unknown as { id: string; display_name: string; avatar_url: string | null }
       if (profile.id === userId) continue // Skip self
 
       const key = `${profile.id}_owes_me`
@@ -65,6 +67,7 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
         debtMap.set(key, {
           person_id: profile.id,
           person_name: profile.display_name,
+          person_avatar: profile.avatar_url,
           total_amount: Number(item.amount),
           type: "owes_me",
         })
@@ -77,7 +80,7 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
     for (const item of iOwe) {
       const transaction = item.transactions as unknown as {
         payer_id: string
-        profiles: { id: string; display_name: string }
+        profiles: { id: string; display_name: string; avatar_url: string | null }
       }
       const profile = transaction.profiles
 
@@ -89,6 +92,7 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
         debtMap.set(key, {
           person_id: profile.id,
           person_name: profile.display_name,
+          person_avatar: profile.avatar_url,
           total_amount: Number(item.amount),
           type: "i_owe",
         })
@@ -115,9 +119,15 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
                 .map((debt) => (
                   <Link key={debt.person_id} href={`/debts/${debt.person_id}`}>
                     <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                      <div>
-                        <p className="font-medium">{debt.person_name}</p>
-                        <p className="text-sm text-muted-foreground">Nợ bạn</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={debt.person_avatar || undefined} alt={debt.person_name} />
+                          <AvatarFallback>{debt.person_name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{debt.person_name}</p>
+                          <p className="text-sm text-muted-foreground">Nợ bạn</p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-green-600 border-green-600">
@@ -148,9 +158,15 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
                 .map((debt) => (
                   <Link key={debt.person_id} href={`/debts/${debt.person_id}`}>
                     <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors">
-                      <div>
-                        <p className="font-medium">{debt.person_name}</p>
-                        <p className="text-sm text-muted-foreground">Bạn nợ</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={debt.person_avatar || undefined} alt={debt.person_name} />
+                          <AvatarFallback>{debt.person_name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{debt.person_name}</p>
+                          <p className="text-sm text-muted-foreground">Bạn nợ</p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-orange-600 border-orange-600">

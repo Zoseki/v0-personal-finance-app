@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { formatAmount } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default async function MyExpensesPage() {
   const supabase = await createClient()
@@ -33,7 +34,7 @@ export default async function MyExpensesPage() {
         is_settled,
         item_description,
         image_url,
-        profiles!transaction_splits_debtor_id_fkey(id, display_name)
+        profiles!transaction_splits_debtor_id_fkey(id, display_name, avatar_url)
       )
     `,
     )
@@ -56,7 +57,7 @@ export default async function MyExpensesPage() {
         description,
         total_amount,
         created_at,
-        profiles!transactions_payer_id_fkey(id, display_name)
+        profiles!transactions_payer_id_fkey(id, display_name, avatar_url)
       )
     `,
     )
@@ -122,7 +123,7 @@ export default async function MyExpensesPage() {
                     is_settled: boolean
                     item_description: string
                     image_url?: string
-                    profiles: { id: string; display_name: string }
+                    profiles: { id: string; display_name: string; avatar_url: string | null }
                   }>
 
                   const settledCount = splits.filter((s) => s.is_settled).length
@@ -131,7 +132,7 @@ export default async function MyExpensesPage() {
                   return (
                     <div key={transaction.id} className="space-y-3 border-b pb-4 last:border-0">
                       <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
+                        <div className="space-y-2 flex-1">
                           {transaction.description && transaction.description !== "Chi tiêu" && (
                             <p className="font-medium">{transaction.description}</p>
                           )}
@@ -141,20 +142,30 @@ export default async function MyExpensesPage() {
                               locale: vi,
                             })}
                           </p>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-2">
                             {splits.map((split) => (
-                              <Badge
+                              <div
                                 key={split.id}
-                                variant={split.is_settled ? "default" : "secondary"}
-                                className="text-xs"
+                                className="flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-background"
                               >
-                                {split.profiles.display_name}: {split.item_description} -{" "}
-                                {formatAmount(Number(split.amount))}
-                              </Badge>
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage
+                                    src={split.profiles.avatar_url || undefined}
+                                    alt={split.profiles.display_name}
+                                  />
+                                  <AvatarFallback className="text-[10px]">
+                                    {split.profiles.display_name.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className={split.is_settled ? "line-through opacity-60" : ""}>
+                                  {split.profiles.display_name}: {split.item_description} -{" "}
+                                  {formatAmount(Number(split.amount))}
+                                </span>
+                              </div>
                             ))}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right ml-4">
                           <p className="font-semibold">{formatAmount(Number(transaction.total_amount))}</p>
                           <p className="text-xs text-muted-foreground">
                             {settledCount}/{totalCount} đã trả
@@ -199,7 +210,7 @@ export default async function MyExpensesPage() {
                     description: string
                     total_amount: number
                     created_at: string
-                    profiles: { id: string; display_name: string }
+                    profiles: { id: string; display_name: string; avatar_url: string | null }
                   }
 
                   return (
@@ -216,7 +227,19 @@ export default async function MyExpensesPage() {
                             className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
                           />
                         )}
-                        <p className="text-sm text-muted-foreground">Trả cho: {transaction.profiles.display_name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Trả cho:</span>
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage
+                              src={transaction.profiles.avatar_url || undefined}
+                              alt={transaction.profiles.display_name}
+                            />
+                            <AvatarFallback className="text-[10px]">
+                              {transaction.profiles.display_name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{transaction.profiles.display_name}</span>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
                             addSuffix: true,

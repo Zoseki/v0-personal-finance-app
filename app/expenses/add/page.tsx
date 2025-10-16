@@ -12,11 +12,13 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Trash2, Plus, Users, ImageIcon, X } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Profile = {
   id: string
   display_name: string
   email: string
+  avatar_url: string | null
 }
 
 type Split = {
@@ -281,8 +283,14 @@ export default function AddExpensePage() {
                               />
                               <label
                                 htmlFor={`bulk-${profile.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                               >
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name} />
+                                  <AvatarFallback className="text-[10px]">
+                                    {profile.display_name.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
                                 {profile.display_name}
                               </label>
                             </div>
@@ -395,7 +403,15 @@ export default function AddExpensePage() {
                             <SelectContent>
                               {profiles.map((profile) => (
                                 <SelectItem key={profile.id} value={profile.id}>
-                                  {profile.display_name}
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-5 w-5">
+                                      <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name} />
+                                      <AvatarFallback className="text-[10px]">
+                                        {profile.display_name.charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {profile.display_name}
+                                  </div>
                                 </SelectItem>
                               ))}
                             </SelectContent>

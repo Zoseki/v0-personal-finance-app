@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Plus, Users, ImageIcon, X } from "lucide-react"
+import { Trash2, Plus, Users } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -25,7 +25,6 @@ type Split = {
   debtor_id: string
   item_description: string
   amount: string
-  image_url?: string
 }
 
 export default function AddExpensePage() {
@@ -35,13 +34,11 @@ export default function AddExpensePage() {
   const [currentUserId, setCurrentUserId] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [uploadingImages, setUploadingImages] = useState<Set<number>>(new Set())
 
   const [isBulkMode, setIsBulkMode] = useState(false)
   const [selectedPeople, setSelectedPeople] = useState<Set<string>>(new Set())
   const [bulkItem, setBulkItem] = useState("")
   const [bulkAmount, setBulkAmount] = useState("")
-  const [bulkImage, setBulkImage] = useState<string>("")
 
   const router = useRouter()
   const supabase = createClient()
@@ -80,61 +77,6 @@ export default function AddExpensePage() {
     setSplits(newSplits)
   }
 
-  const handleImageUpload = async (index: number, file: File) => {
-    setUploadingImages((prev) => new Set(prev).add(index))
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const response = await fetch("/api/expense-image/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to upload image")
-      }
-
-      const data = await response.json()
-      updateSplit(index, "image_url", data.url)
-    } catch (error) {
-      console.error("Error uploading image:", error)
-      setError("Không thể tải ảnh lên. Vui lòng thử lại.")
-    } finally {
-      setUploadingImages((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(index)
-        return newSet
-      })
-    }
-  }
-
-  const handleBulkImageUpload = async (file: File) => {
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const response = await fetch("/api/expense-image/upload", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to upload image")
-      }
-
-      const data = await response.json()
-      setBulkImage(data.url)
-    } catch (error) {
-      console.error("Error uploading image:", error)
-      setError("Không thể tải ảnh lên. Vui lòng thử lại.")
-    }
-  }
-
-  const removeImage = (index: number) => {
-    updateSplit(index, "image_url", "")
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -168,7 +110,6 @@ export default function AddExpensePage() {
         debtor_id: s.debtor_id,
         item_description: s.item_description,
         amount: Number.parseFloat(s.amount),
-        image_url: s.image_url || null,
       }))
 
       const { error: splitsError } = await supabase.from("transaction_splits").insert(splitsData)
@@ -193,7 +134,6 @@ export default function AddExpensePage() {
     setSelectedPeople(new Set())
     setBulkItem("")
     setBulkAmount("")
-    setBulkImage("")
   }
 
   const togglePersonSelection = (personId: string) => {
@@ -213,7 +153,6 @@ export default function AddExpensePage() {
       debtor_id: personId,
       item_description: bulkItem,
       amount: bulkAmount,
-      image_url: bulkImage || undefined,
     }))
 
     const existingSplits = splits.filter((s) => s.debtor_id || s.item_description || s.amount)
@@ -223,11 +162,10 @@ export default function AddExpensePage() {
     setSelectedPeople(new Set())
     setBulkItem("")
     setBulkAmount("")
-    setBulkImage("")
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 p-6">
+    <div className="min-h-screen bg-muted/30 p-4 md:p-6">
       <div className="mx-auto max-w-2xl">
         <Card>
           <CardHeader>
@@ -247,20 +185,27 @@ export default function AddExpensePage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <Label>Chi tiết chi tiêu</Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <Button
                       type="button"
                       variant={isBulkMode ? "default" : "outline"}
                       size="sm"
                       onClick={toggleBulkMode}
+                      className="flex-1 sm:flex-none"
                     >
                       <Users className="mr-2 h-4 w-4" />
                       {isBulkMode ? "Đang chọn nhiều" : "Thêm nhiều người"}
                     </Button>
                     {!isBulkMode && (
-                      <Button type="button" variant="outline" size="sm" onClick={addSplit}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addSplit}
+                        className="flex-1 sm:flex-none bg-transparent"
+                      >
                         <Plus className="mr-2 h-4 w-4" />
                         Thêm người
                       </Button>
@@ -273,7 +218,7 @@ export default function AddExpensePage() {
                     <CardContent className="pt-6 space-y-4">
                       <div className="space-y-3">
                         <Label>Chọn người (đã chọn: {selectedPeople.size})</Label>
-                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                           {profiles.map((profile) => (
                             <div key={profile.id} className="flex items-center space-x-2">
                               <Checkbox
@@ -283,7 +228,7 @@ export default function AddExpensePage() {
                               />
                               <label
                                 htmlFor={`bulk-${profile.id}`}
-                                className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
                               >
                                 <Avatar className="h-6 w-6">
                                   <AvatarImage src={profile.avatar_url || undefined} alt={profile.display_name} />
@@ -291,7 +236,7 @@ export default function AddExpensePage() {
                                     {profile.display_name.charAt(0).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
-                                {profile.display_name}
+                                <span className="truncate">{profile.display_name}</span>
                               </label>
                             </div>
                           ))}
@@ -318,50 +263,6 @@ export default function AddExpensePage() {
                           value={bulkAmount}
                           onChange={(e) => setBulkAmount(e.target.value)}
                         />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="bulk-image">Ảnh (tùy chọn)</Label>
-                        {bulkImage ? (
-                          <div className="relative">
-                            <img
-                              src={bulkImage || "/placeholder.svg"}
-                              alt="Bulk expense"
-                              className="w-full h-32 object-cover rounded-md"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-2 right-2 h-6 w-6"
-                              onClick={() => setBulkImage("")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id="bulk-image"
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file) handleBulkImageUpload(file)
-                              }}
-                              className="hidden"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => document.getElementById("bulk-image")?.click()}
-                            >
-                              <ImageIcon className="mr-2 h-4 w-4" />
-                              Chọn ảnh
-                            </Button>
-                          </div>
-                        )}
                       </div>
 
                       <div className="flex gap-2">
@@ -391,8 +292,8 @@ export default function AddExpensePage() {
                 {!isBulkMode &&
                   splits.map((split, index) => (
                     <div key={index} className="space-y-2 p-4 border rounded-lg">
-                      <div className="flex gap-2 items-start">
-                        <div className="flex-1 space-y-2">
+                      <div className="flex flex-col sm:flex-row gap-2 items-start">
+                        <div className="flex-1 space-y-2 w-full">
                           <Select
                             value={split.debtor_id}
                             onValueChange={(value) => updateSplit(index, "debtor_id", value)}
@@ -422,7 +323,7 @@ export default function AddExpensePage() {
                             onChange={(e) => updateSplit(index, "item_description", e.target.value)}
                           />
                         </div>
-                        <div className="w-32 pt-0">
+                        <div className="w-full sm:w-32">
                           <Input
                             type="number"
                             step="1"
@@ -437,54 +338,10 @@ export default function AddExpensePage() {
                           size="icon"
                           onClick={() => removeSplit(index)}
                           disabled={splits.length === 1}
-                          className="mt-0"
+                          className="mt-0 flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {split.image_url ? (
-                          <div className="relative">
-                            <img
-                              src={split.image_url || "/placeholder.svg"}
-                              alt={split.item_description || "Expense"}
-                              className="w-full h-32 object-cover rounded-md"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-2 right-2 h-6 w-6"
-                              onClick={() => removeImage(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id={`image-${index}`}
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file) handleImageUpload(index, file)
-                              }}
-                              className="hidden"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => document.getElementById(`image-${index}`)?.click()}
-                              disabled={uploadingImages.has(index)}
-                            >
-                              <ImageIcon className="mr-2 h-4 w-4" />
-                              {uploadingImages.has(index) ? "Đang tải..." : "Thêm ảnh"}
-                            </Button>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -499,7 +356,7 @@ export default function AddExpensePage() {
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button type="button" variant="outline" className="flex-1 bg-transparent" onClick={() => router.back()}>
                   Hủy
                 </Button>

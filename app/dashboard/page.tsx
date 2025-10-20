@@ -21,10 +21,10 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Xin chào, {profile?.display_name}!</h1>
-          <p className="text-muted-foreground">Quản lý chi tiêu và công nợ của bạn</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Xin chào, {profile?.display_name}!</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Quản lý chi tiêu và công nợ của bạn</p>
         </div>
 
         <DebtSummary userId={user.id} />

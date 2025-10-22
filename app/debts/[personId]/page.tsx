@@ -1,5 +1,3 @@
-"use client"
-
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/navbar"
@@ -151,48 +149,20 @@ export default async function DebtDetailPage({ params }: PageProps) {
                 </div>
                 <div className="flex gap-2">
                   {pendingOwesMeCount > 0 && (
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={async () => {
-                        const supabase = await createClient()
-                        const pendingIds = owesMe
-                          .filter((s) => !s.is_settled && s.settlement_status === "pending")
-                          .map((s) => s.id)
-
-                        for (const id of pendingIds) {
-                          await supabase
-                            .from("transaction_splits")
-                            .update({ is_settled: true, settlement_status: "settled" })
-                            .eq("id", id)
-                        }
-                        window.location.reload()
-                      }}
-                    >
-                      Xác nhận tất cả ({pendingOwesMeCount})
-                    </Button>
+                    <ConfirmAllButton
+                      splitIds={owesMe
+                        .filter((s) => !s.is_settled && s.settlement_status === "pending")
+                        .map((s) => s.id)}
+                      count={pendingOwesMeCount}
+                    />
                   )}
                   {unsettledOwesMeCount > 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        const supabase = await createClient()
-                        const unsettledIds = owesMe
-                          .filter((s) => !s.is_settled && s.settlement_status !== "settled")
-                          .map((s) => s.id)
-
-                        for (const id of unsettledIds) {
-                          await supabase
-                            .from("transaction_splits")
-                            .update({ is_settled: true, settlement_status: "settled" })
-                            .eq("id", id)
-                        }
-                        window.location.reload()
-                      }}
-                    >
-                      Đánh dấu tất cả đã trả ({unsettledOwesMeCount})
-                    </Button>
+                    <MarkAllPaidButton
+                      splitIds={owesMe
+                        .filter((s) => !s.is_settled && s.settlement_status !== "settled")
+                        .map((s) => s.id)}
+                      count={unsettledOwesMeCount}
+                    />
                   )}
                 </div>
               </div>
@@ -252,23 +222,10 @@ export default async function DebtDetailPage({ params }: PageProps) {
                   <CardDescription>Các khoản bạn cần trả cho {person.display_name}</CardDescription>
                 </div>
                 {unsettledIOweCount > 0 && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={async () => {
-                      const supabase = await createClient()
-                      const unsettledIds = iOwe
-                        .filter((s) => !s.is_settled && s.settlement_status !== "settled")
-                        .map((s) => s.id)
-
-                      for (const id of unsettledIds) {
-                        await supabase.from("transaction_splits").update({ settlement_status: "pending" }).eq("id", id)
-                      }
-                      window.location.reload()
-                    }}
-                  >
-                    Gửi tất cả yêu cầu ({unsettledIOweCount})
-                  </Button>
+                  <SendAllRequestsButton
+                    splitIds={iOwe.filter((s) => !s.is_settled && s.settlement_status !== "settled").map((s) => s.id)}
+                    count={unsettledIOweCount}
+                  />
                 )}
               </div>
             </CardHeader>
@@ -321,5 +278,69 @@ export default async function DebtDetailPage({ params }: PageProps) {
         )}
       </div>
     </div>
+  )
+}
+;("use client")
+
+function ConfirmAllButton({ splitIds, count }: { splitIds: string[]; count: number }) {
+  return (
+    <Button
+      size="sm"
+      variant="default"
+      onClick={async () => {
+        const response = await fetch("/api/debts/confirm-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ splitIds }),
+        })
+        if (response.ok) {
+          window.location.reload()
+        }
+      }}
+    >
+      Xác nhận tất cả ({count})
+    </Button>
+  )
+}
+
+function MarkAllPaidButton({ splitIds, count }: { splitIds: string[]; count: number }) {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={async () => {
+        const response = await fetch("/api/debts/mark-all-paid", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ splitIds }),
+        })
+        if (response.ok) {
+          window.location.reload()
+        }
+      }}
+    >
+      Đánh dấu tất cả đã trả ({count})
+    </Button>
+  )
+}
+
+function SendAllRequestsButton({ splitIds, count }: { splitIds: string[]; count: number }) {
+  return (
+    <Button
+      size="sm"
+      variant="default"
+      onClick={async () => {
+        const response = await fetch("/api/debts/send-all-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ splitIds }),
+        })
+        if (response.ok) {
+          window.location.reload()
+        }
+      }}
+    >
+      Gửi tất cả yêu cầu ({count})
+    </Button>
   )
 }

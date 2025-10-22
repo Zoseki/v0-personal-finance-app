@@ -1,3 +1,5 @@
+"use client"
+
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/navbar"
@@ -96,6 +98,11 @@ export default async function DebtDetailPage({ params }: PageProps) {
       ?.filter((s) => !s.is_settled && s.settlement_status !== "settled")
       .reduce((sum, s) => sum + Number(s.amount), 0) || 0
 
+  const pendingOwesMeCount = owesMe?.filter((s) => !s.is_settled && s.settlement_status === "pending").length || 0
+  const unsettledOwesMeCount = owesMe?.filter((s) => !s.is_settled && s.settlement_status !== "settled").length || 0
+  const pendingIOweCount = iOwe?.filter((s) => !s.is_settled && s.settlement_status === "pending").length || 0
+  const unsettledIOweCount = iOwe?.filter((s) => !s.is_settled && s.settlement_status !== "settled").length || 0
+
   return (
     <div className="min-h-screen bg-muted/30">
       <Navbar />
@@ -139,8 +146,58 @@ export default async function DebtDetailPage({ params }: PageProps) {
         {owesMe && owesMe.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>{person.display_name} nợ bạn - Chi tiết</CardTitle>
-              <CardDescription>Các khoản {person.display_name} cần trả cho bạn</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{person.display_name} nợ bạn - Chi tiết</CardTitle>
+                  <CardDescription>Các khoản {person.display_name} cần trả cho bạn</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {pendingOwesMeCount > 0 && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={async () => {
+                        const supabase = await createClient()
+                        const pendingIds = owesMe
+                          .filter((s) => !s.is_settled && s.settlement_status === "pending")
+                          .map((s) => s.id)
+
+                        for (const id of pendingIds) {
+                          await supabase
+                            .from("transaction_splits")
+                            .update({ is_settled: true, settlement_status: "settled" })
+                            .eq("id", id)
+                        }
+                        window.location.reload()
+                      }}
+                    >
+                      Xác nhận tất cả ({pendingOwesMeCount})
+                    </Button>
+                  )}
+                  {unsettledOwesMeCount > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        const supabase = await createClient()
+                        const unsettledIds = owesMe
+                          .filter((s) => !s.is_settled && s.settlement_status !== "settled")
+                          .map((s) => s.id)
+
+                        for (const id of unsettledIds) {
+                          await supabase
+                            .from("transaction_splits")
+                            .update({ is_settled: true, settlement_status: "settled" })
+                            .eq("id", id)
+                        }
+                        window.location.reload()
+                      }}
+                    >
+                      Đánh dấu tất cả đã trả ({unsettledOwesMeCount})
+                    </Button>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -198,8 +255,31 @@ export default async function DebtDetailPage({ params }: PageProps) {
         {iOwe && iOwe.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Bạn nợ {person.display_name} - Chi tiết</CardTitle>
-              <CardDescription>Các khoản bạn cần trả cho {person.display_name}</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Bạn nợ {person.display_name} - Chi tiết</CardTitle>
+                  <CardDescription>Các khoản bạn cần trả cho {person.display_name}</CardDescription>
+                </div>
+                {unsettledIOweCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={async () => {
+                      const supabase = await createClient()
+                      const unsettledIds = iOwe
+                        .filter((s) => !s.is_settled && s.settlement_status !== "settled")
+                        .map((s) => s.id)
+
+                      for (const id of unsettledIds) {
+                        await supabase.from("transaction_splits").update({ settlement_status: "pending" }).eq("id", id)
+                      }
+                      window.location.reload()
+                    }}
+                  >
+                    Gửi tất cả yêu cầu ({unsettledIOweCount})
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

@@ -86,8 +86,14 @@ export default async function DebtDetailPage({ params }: PageProps) {
     .eq("transactions.payer_id", personId)
     .order("created_at", { ascending: false })
 
-  const owesMeTotal = owesMe?.filter((s) => !s.is_settled).reduce((sum, s) => sum + Number(s.amount), 0) || 0
-  const iOweTotal = iOwe?.filter((s) => !s.is_settled).reduce((sum, s) => sum + Number(s.amount), 0) || 0
+  const owesMeTotal =
+    owesMe
+      ?.filter((s) => !s.is_settled && s.settlement_status !== "settled")
+      .reduce((sum, s) => sum + Number(s.amount), 0) || 0
+  const iOweTotal =
+    iOwe
+      ?.filter((s) => !s.is_settled && s.settlement_status !== "settled")
+      .reduce((sum, s) => sum + Number(s.amount), 0) || 0
 
   return (
     <div className="min-h-screen bg-muted/30">

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SettleDebtButton } from "@/components/settle-debt-button"
-import { ConfirmPaymentButton } from "@/components/confirm-payment-button"
+import { MarkPaidButton } from "@/components/mark-paid-button"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { ArrowLeft } from "lucide-react"
@@ -86,8 +86,14 @@ export default async function DebtDetailPage({ params }: PageProps) {
     .eq("transactions.payer_id", personId)
     .order("created_at", { ascending: false })
 
-  const owesMeTotal = owesMe?.filter((s) => !s.is_settled).reduce((sum, s) => sum + Number(s.amount), 0) || 0
-  const iOweTotal = iOwe?.filter((s) => !s.is_settled).reduce((sum, s) => sum + Number(s.amount), 0) || 0
+  const owesMeTotal =
+    owesMe
+      ?.filter((s) => !s.is_settled && s.settlement_status !== "settled")
+      .reduce((sum, s) => sum + Number(s.amount), 0) || 0
+  const iOweTotal =
+    iOwe
+      ?.filter((s) => !s.is_settled && s.settlement_status !== "settled")
+      .reduce((sum, s) => sum + Number(s.amount), 0) || 0
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -174,9 +180,9 @@ export default async function DebtDetailPage({ params }: PageProps) {
                               Đã trả
                             </Badge>
                           ) : split.settlement_status === "pending" ? (
-                            <ConfirmPaymentButton splitId={split.id} amount={Number(split.amount)} />
+                            <MarkPaidButton splitId={split.id} amount={Number(split.amount)} />
                           ) : (
-                            <SettleDebtButton splitId={split.id} amount={Number(split.amount)} />
+                            <MarkPaidButton splitId={split.id} amount={Number(split.amount)} />
                           )}
                         </div>
                       </div>

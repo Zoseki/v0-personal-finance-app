@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SettleDebtButton } from "@/components/settle-debt-button"
+import { ConfirmPaymentButton } from "@/components/confirm-payment-button"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { ArrowLeft } from "lucide-react"
@@ -43,6 +44,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
       id,
       amount,
       is_settled,
+      settlement_status,
       item_description,
       image_url,
       created_at,
@@ -67,6 +69,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
       id,
       amount,
       is_settled,
+      settlement_status,
       item_description,
       image_url,
       created_at,
@@ -170,6 +173,8 @@ export default async function DebtDetailPage({ params }: PageProps) {
                             <Badge variant="default" className="text-xs">
                               Đã trả
                             </Badge>
+                          ) : split.settlement_status === "pending" ? (
+                            <ConfirmPaymentButton splitId={split.id} amount={Number(split.amount)} />
                           ) : (
                             <SettleDebtButton splitId={split.id} amount={Number(split.amount)} />
                           )}
@@ -226,6 +231,10 @@ export default async function DebtDetailPage({ params }: PageProps) {
                           {split.is_settled ? (
                             <Badge variant="default" className="text-xs">
                               Đã trả
+                            </Badge>
+                          ) : split.settlement_status === "pending" ? (
+                            <Badge variant="secondary" className="text-xs">
+                              Chờ xác nhận
                             </Badge>
                           ) : (
                             <SettleDebtButton splitId={split.id} amount={Number(split.amount)} />

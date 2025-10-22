@@ -318,20 +318,19 @@ export default function AddExpensePage() {
                             </SelectContent>
                           </Select>
                           <Input
-                            placeholder="Tên món (Ví dụ: Cơm trưa, Cafe...)"
-                            value={split.item_description}
-                            onChange={(e) => updateSplit(index, "item_description", e.target.value)}
-                          />
-                        </div>
-                        <div className="w-full sm:w-32">
-                          <Input
                             type="number"
                             step="1"
                             placeholder="Số tiền"
                             value={split.amount}
                             onChange={(e) => updateSplit(index, "amount", e.target.value)}
                           />
+                          <Input
+                            placeholder="Tên món (Ví dụ: Cơm trưa, Cafe...)"
+                            value={split.item_description}
+                            onChange={(e) => updateSplit(index, "item_description", e.target.value)}
+                          />
                         </div>
+                        
                         <Button
                           type="button"
                           variant="ghost"
@@ -349,7 +348,7 @@ export default function AddExpensePage() {
                 <div className="rounded-lg bg-muted p-3 text-sm">
                   <div className="flex justify-between">
                     <span className="font-medium">Tổng tiền:</span>
-                    <span className="font-bold text-lg">{calculateTotal().toFixed(0)}</span>
+                    <span className="font-bold text-lg">{calculateTotal().toFixed(0)}k</span>
                   </div>
                 </div>
               </div>

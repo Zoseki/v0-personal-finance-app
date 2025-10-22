@@ -49,7 +49,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
       is_settled,
       settlement_status,
       item_description,
-      image_url,
       created_at,
       transactions!inner(
         id,
@@ -74,7 +73,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
       is_settled,
       settlement_status,
       item_description,
-      image_url,
       created_at,
       transactions!inner(
         id,
@@ -216,13 +214,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
                         )}
-                        {split.image_url && (
-                          <img
-                            src={split.image_url || "/placeholder.svg"}
-                            alt={split.item_description}
-                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
-                          />
-                        )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
                             addSuffix: true,
@@ -297,13 +288,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
                         <p className="font-medium">{split.item_description}</p>
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                        )}
-                        {split.image_url && (
-                          <img
-                            src={split.image_url || "/placeholder.svg"}
-                            alt={split.item_description}
-                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
-                          />
                         )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SettleDebtButton } from "@/components/settle-debt-button"
+import { MarkPaidButton } from "@/components/mark-paid-button"
 import { ConfirmPaymentButton } from "@/components/confirm-payment-button"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
@@ -46,7 +47,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
       is_settled,
       settlement_status,
       item_description,
-      image_url,
       created_at,
       transactions!inner(
         id,
@@ -71,7 +71,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
       is_settled,
       settlement_status,
       item_description,
-      image_url,
       created_at,
       transactions!inner(
         id,
@@ -94,6 +93,11 @@ export default async function DebtDetailPage({ params }: PageProps) {
     iOwe
       ?.filter((s) => !s.is_settled && s.settlement_status !== "settled")
       .reduce((sum, s) => sum + Number(s.amount), 0) || 0
+
+  const pendingOwesMeCount = owesMe?.filter((s) => !s.is_settled && s.settlement_status === "pending").length || 0
+  const unsettledOwesMeCount = owesMe?.filter((s) => !s.is_settled && s.settlement_status !== "settled").length || 0
+  const pendingIOweCount = iOwe?.filter((s) => !s.is_settled && s.settlement_status === "pending").length || 0
+  const unsettledIOweCount = iOwe?.filter((s) => !s.is_settled && s.settlement_status !== "settled").length || 0
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -138,8 +142,30 @@ export default async function DebtDetailPage({ params }: PageProps) {
         {owesMe && owesMe.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>{person.display_name} nợ bạn - Chi tiết</CardTitle>
-              <CardDescription>Các khoản {person.display_name} cần trả cho bạn</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>{person.display_name} nợ bạn - Chi tiết</CardTitle>
+                  <CardDescription>Các khoản {person.display_name} cần trả cho bạn</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  {pendingOwesMeCount > 0 && (
+                    <ConfirmAllButton
+                      splitIds={owesMe
+                        .filter((s) => !s.is_settled && s.settlement_status === "pending")
+                        .map((s) => s.id)}
+                      count={pendingOwesMeCount}
+                    />
+                  )}
+                  {unsettledOwesMeCount > 0 && (
+                    <MarkAllPaidButton
+                      splitIds={owesMe
+                        .filter((s) => !s.is_settled && s.settlement_status !== "settled")
+                        .map((s) => s.id)}
+                      count={unsettledOwesMeCount}
+                    />
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -158,13 +184,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
                         )}
-                        {split.image_url && (
-                          <img
-                            src={split.image_url || "/placeholder.svg"}
-                            alt={split.item_description}
-                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
-                          />
-                        )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
                             addSuffix: true,
@@ -182,7 +201,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
                           ) : split.settlement_status === "pending" ? (
                             <ConfirmPaymentButton splitId={split.id} amount={Number(split.amount)} />
                           ) : (
-                            <SettleDebtButton splitId={split.id} amount={Number(split.amount)} />
+                            <MarkPaidButton splitId={split.id} amount={Number(split.amount)} />
                           )}
                         </div>
                       </div>
@@ -197,8 +216,18 @@ export default async function DebtDetailPage({ params }: PageProps) {
         {iOwe && iOwe.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Bạn nợ {person.display_name} - Chi tiết</CardTitle>
-              <CardDescription>Các khoản bạn cần trả cho {person.display_name}</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Bạn nợ {person.display_name} - Chi tiết</CardTitle>
+                  <CardDescription>Các khoản bạn cần trả cho {person.display_name}</CardDescription>
+                </div>
+                {unsettledIOweCount > 0 && (
+                  <SendAllRequestsButton
+                    splitIds={iOwe.filter((s) => !s.is_settled && s.settlement_status !== "settled").map((s) => s.id)}
+                    count={unsettledIOweCount}
+                  />
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -216,13 +245,6 @@ export default async function DebtDetailPage({ params }: PageProps) {
                         <p className="font-medium">{split.item_description}</p>
                         {transaction.description && transaction.description !== "Chi tiêu" && (
                           <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                        )}
-                        {split.image_url && (
-                          <img
-                            src={split.image_url || "/placeholder.svg"}
-                            alt={split.item_description}
-                            className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
-                          />
                         )}
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(transaction.created_at), {
@@ -256,5 +278,69 @@ export default async function DebtDetailPage({ params }: PageProps) {
         )}
       </div>
     </div>
+  )
+}
+;("use client")
+
+function ConfirmAllButton({ splitIds, count }: { splitIds: string[]; count: number }) {
+  return (
+    <Button
+      size="sm"
+      variant="default"
+      onClick={async () => {
+        const response = await fetch("/api/debts/confirm-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ splitIds }),
+        })
+        if (response.ok) {
+          window.location.reload()
+        }
+      }}
+    >
+      Xác nhận tất cả ({count})
+    </Button>
+  )
+}
+
+function MarkAllPaidButton({ splitIds, count }: { splitIds: string[]; count: number }) {
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={async () => {
+        const response = await fetch("/api/debts/mark-all-paid", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ splitIds }),
+        })
+        if (response.ok) {
+          window.location.reload()
+        }
+      }}
+    >
+      Đánh dấu tất cả đã trả ({count})
+    </Button>
+  )
+}
+
+function SendAllRequestsButton({ splitIds, count }: { splitIds: string[]; count: number }) {
+  return (
+    <Button
+      size="sm"
+      variant="default"
+      onClick={async () => {
+        const response = await fetch("/api/debts/send-all-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ splitIds }),
+        })
+        if (response.ok) {
+          window.location.reload()
+        }
+      }}
+    >
+      Gửi tất cả yêu cầu ({count})
+    </Button>
   )
 }

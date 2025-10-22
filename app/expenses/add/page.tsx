@@ -77,6 +77,14 @@ export default function AddExpensePage() {
     setSplits(newSplits)
   }
 
+  const toggleSelectAll = () => {
+    if (selectedPeople.size === profiles.length) {
+      setSelectedPeople(new Set())
+    } else {
+      setSelectedPeople(new Set(profiles.map((p) => p.id)))
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -217,7 +225,19 @@ export default function AddExpensePage() {
                   <Card className="border-2 border-primary/20">
                     <CardContent className="pt-6 space-y-4">
                       <div className="space-y-3">
-                        <Label>Chọn người (đã chọn: {selectedPeople.size})</Label>
+                        <div className="flex items-center justify-between">
+                          <Label>Chọn người (đã chọn: {selectedPeople.size})</Label>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="select-all"
+                              checked={selectedPeople.size === profiles.length && profiles.length > 0}
+                              onCheckedChange={toggleSelectAll}
+                            />
+                            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                              Chọn tất cả
+                            </label>
+                          </div>
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                           {profiles.map((profile) => (
                             <div key={profile.id} className="flex items-center space-x-2">
@@ -330,7 +350,7 @@ export default function AddExpensePage() {
                             onChange={(e) => updateSplit(index, "item_description", e.target.value)}
                           />
                         </div>
-                        
+
                         <Button
                           type="button"
                           variant="ghost"

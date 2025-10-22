@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SettleDebtButton } from "@/components/settle-debt-button"
 import { MarkPaidButton } from "@/components/mark-paid-button"
+import { ConfirmPaymentButton } from "@/components/confirm-payment-button"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { ArrowLeft } from "lucide-react"
@@ -180,7 +181,7 @@ export default async function DebtDetailPage({ params }: PageProps) {
                               Đã trả
                             </Badge>
                           ) : split.settlement_status === "pending" ? (
-                            <MarkPaidButton splitId={split.id} amount={Number(split.amount)} />
+                            <ConfirmPaymentButton splitId={split.id} amount={Number(split.amount)} />
                           ) : (
                             <MarkPaidButton splitId={split.id} amount={Number(split.amount)} />
                           )}

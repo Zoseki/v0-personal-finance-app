@@ -1,5 +1,3 @@
-"use client"
-
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Navbar } from "@/components/navbar"
@@ -15,6 +13,7 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { formatAmount } from "@/lib/utils"
+import { ConfirmAllButton, MarkAllPaidButton, SendAllRequestsButton } from "@/components/debt-bulk-actions"
 
 type PageProps = {
   params: Promise<{ personId: string }>
@@ -280,69 +279,5 @@ export default async function DebtDetailPage({ params }: PageProps) {
         )}
       </div>
     </div>
-  )
-}
-;("use client")
-
-function ConfirmAllButton({ splitIds, count }: { splitIds: string[]; count: number }) {
-  return (
-    <Button
-      size="sm"
-      variant="default"
-      onClick={async () => {
-        const response = await fetch("/api/debts/confirm-all", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ splitIds }),
-        })
-        if (response.ok) {
-          window.location.reload()
-        }
-      }}
-    >
-      Xác nhận tất cả ({count})
-    </Button>
-  )
-}
-
-function MarkAllPaidButton({ splitIds, count }: { splitIds: string[]; count: number }) {
-  return (
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={async () => {
-        const response = await fetch("/api/debts/mark-all-paid", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ splitIds }),
-        })
-        if (response.ok) {
-          window.location.reload()
-        }
-      }}
-    >
-      Đánh dấu tất cả đã trả ({count})
-    </Button>
-  )
-}
-
-function SendAllRequestsButton({ splitIds, count }: { splitIds: string[]; count: number }) {
-  return (
-    <Button
-      size="sm"
-      variant="default"
-      onClick={async () => {
-        const response = await fetch("/api/debts/send-all-requests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ splitIds }),
-        })
-        if (response.ok) {
-          window.location.reload()
-        }
-      }}
-    >
-      Gửi tất cả yêu cầu ({count})
-    </Button>
   )
 }

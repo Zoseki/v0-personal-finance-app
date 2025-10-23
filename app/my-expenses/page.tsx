@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { formatAmount } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Suspense } from "react"
 
 export default async function MyExpensesPage() {
   const supabase = await createClient()
@@ -70,7 +71,9 @@ export default async function MyExpensesPage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <Navbar />
+      <Suspense fallback={<div className="h-16 border-b bg-background" />}>
+        <Navbar />
+      </Suspense>
       <div className="container mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Chi tiêu của tôi</h1>

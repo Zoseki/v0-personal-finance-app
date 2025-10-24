@@ -32,7 +32,6 @@ export async function MyExpensesContent() {
         amount,
         is_settled,
         item_description,
-        image_url,
         debtor_id,
         profiles:debtor_id(id, display_name, avatar_url)
       )
@@ -54,7 +53,6 @@ export async function MyExpensesContent() {
       amount,
       is_settled,
       item_description,
-      image_url,
       created_at,
       transaction_id,
       transactions(
@@ -130,7 +128,6 @@ export async function MyExpensesContent() {
                   amount: number
                   is_settled: boolean
                   item_description: string
-                  image_url?: string
                   profiles: { id: string; display_name: string; avatar_url: string | null }
                 }>
 
@@ -180,20 +177,6 @@ export async function MyExpensesContent() {
                         </p>
                       </div>
                     </div>
-                    {splits.some((s) => s.image_url) && (
-                      <div className="flex gap-2 flex-wrap">
-                        {splits
-                          .filter((s) => s.image_url)
-                          .map((split) => (
-                            <img
-                              key={split.id}
-                              src={split.image_url || "/placeholder.svg"}
-                              alt={split.item_description}
-                              className="w-24 h-24 object-cover rounded-md"
-                            />
-                          ))}
-                      </div>
-                    )}
                   </div>
                 )
               })}
@@ -228,13 +211,7 @@ export async function MyExpensesContent() {
                       {transaction.description && transaction.description !== "Chi tiêu" && (
                         <p className="text-sm text-muted-foreground">{transaction.description}</p>
                       )}
-                      {split.image_url && (
-                        <img
-                          src={split.image_url || "/placeholder.svg"}
-                          alt={split.item_description}
-                          className="w-full max-w-xs h-32 object-cover rounded-md mt-2"
-                        />
-                      )}
+                     
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>Trả cho:</span>
                         <Avatar className="h-5 w-5">

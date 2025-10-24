@@ -18,8 +18,10 @@ export async function MyExpensesContent() {
     redirect("/auth/login")
   }
 
+  console.log("[v0] User ID:", user.id)
+
   // Get all transactions where user is payer
-  const { data: myTransactions } = await supabase
+  const { data: myTransactions, error: transError } = await supabase
     .from("transactions")
     .select(
       `
@@ -40,8 +42,11 @@ export async function MyExpensesContent() {
     .eq("payer_id", user.id)
     .order("created_at", { ascending: false })
 
+  console.log("[v0] My transactions error:", transError)
+  console.log("[v0] My transactions data:", myTransactions)
+
   // Get all transactions where user is debtor
-  const { data: myDebts } = await supabase
+  const { data: myDebts, error: debtsError } = await supabase
     .from("transaction_splits")
     .select(
       `
@@ -62,6 +67,9 @@ export async function MyExpensesContent() {
     )
     .eq("debtor_id", user.id)
     .order("created_at", { ascending: false })
+
+  console.log("[v0] My debts error:", debtsError)
+  console.log("[v0] My debts data:", myDebts)
 
   const totalPaid = myTransactions?.reduce((sum, t) => sum + Number(t.total_amount), 0) || 0
   const totalOwed = myDebts?.reduce((sum, d) => sum + Number(d.amount), 0) || 0

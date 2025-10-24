@@ -18,8 +18,6 @@ export async function MyExpensesContent() {
     redirect("/auth/login")
   }
 
-  console.log("[v0] User ID:", user.id)
-
   // Get all transactions where user is payer
   const { data: myTransactions, error: transError } = await supabase
     .from("transactions")
@@ -35,15 +33,17 @@ export async function MyExpensesContent() {
         is_settled,
         item_description,
         image_url,
-        profiles!transaction_splits_debtor_id_fkey(id, display_name, avatar_url)
+        debtor_id,
+        profiles:debtor_id(id, display_name, avatar_url)
       )
     `,
     )
     .eq("payer_id", user.id)
     .order("created_at", { ascending: false })
 
-  console.log("[v0] My transactions error:", transError)
-  console.log("[v0] My transactions data:", myTransactions)
+  if (transError) {
+    console.error("[v0] Error fetching transactions:", transError)
+  }
 
   // Get all transactions where user is debtor
   const { data: myDebts, error: debtsError } = await supabase
@@ -56,20 +56,23 @@ export async function MyExpensesContent() {
       item_description,
       image_url,
       created_at,
-      transactions!inner(
+      transaction_id,
+      transactions(
         id,
         description,
         total_amount,
         created_at,
-        profiles!transactions_payer_id_fkey(id, display_name, avatar_url)
+        payer_id,
+        profiles:payer_id(id, display_name, avatar_url)
       )
     `,
     )
     .eq("debtor_id", user.id)
     .order("created_at", { ascending: false })
 
-  console.log("[v0] My debts error:", debtsError)
-  console.log("[v0] My debts data:", myDebts)
+  if (debtsError) {
+    console.error("[v0] Error fetching debts:", debtsError)
+  }
 
   const totalPaid = myTransactions?.reduce((sum, t) => sum + Number(t.total_amount), 0) || 0
   const totalOwed = myDebts?.reduce((sum, d) => sum + Number(d.amount), 0) || 0

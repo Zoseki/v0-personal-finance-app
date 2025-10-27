@@ -102,12 +102,18 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
 
   const debts = Array.from(debtMap.values())
 
+  const owesMeTotal = debts.filter((d) => d.type === "owes_me").reduce((sum, d) => sum + d.total_amount, 0)
+
+  const iOweTotal = debts.filter((d) => d.type === "i_owe").reduce((sum, d) => sum + d.total_amount, 0)
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle className="text-green-600">Người khác nợ bạn</CardTitle>
-          <CardDescription>Những người cần trả tiền cho bạn</CardDescription>
+          <CardDescription>
+            Tổng tiền: <span className="font-semibold text-green-600">{formatAmount(owesMeTotal)}</span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {debts.filter((d) => d.type === "owes_me").length === 0 ? (
@@ -146,7 +152,9 @@ export async function DebtSummary({ userId }: DebtSummaryProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-orange-600">Bạn nợ người khác</CardTitle>
-          <CardDescription>Những khoản bạn cần trả</CardDescription>
+          <CardDescription>
+            Tổng tiền: <span className="font-semibold text-orange-600">{formatAmount(iOweTotal)}</span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {debts.filter((d) => d.type === "i_owe").length === 0 ? (

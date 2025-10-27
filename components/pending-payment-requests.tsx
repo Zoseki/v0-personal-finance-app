@@ -45,7 +45,7 @@ export function PendingPaymentRequests({ requests }: { requests: PendingRequest[
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-orange-600 dark:text-orange-400">
-                    {(request.amount / 1000).toFixed(1)}k
+                    {(request.amount).toFixed(1)}k
                   </p>
                 </div>
               </div>

@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Navbar } from "@/components/navbar"
 import { useRouter } from "next/navigation"
 import { User, Upload } from "lucide-react"
+import { BankQRSetup } from "@/components/bank-qr-setup"
 
 export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("")
@@ -248,6 +249,8 @@ export default function ProfilePage() {
               </form>
             </CardContent>
           </Card>
+
+          <BankQRSetup />
         </div>
       </div>
     </div>

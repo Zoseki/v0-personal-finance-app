@@ -25,20 +25,18 @@ export default async function DashboardPage() {
       `
       id,
       amount,
-      transactions(id, payer_id),
-      profiles:debtor_id(id, display_name, avatar_url)
+      transactions(id, payer_id, profiles:payer_id(id, display_name, avatar_url))
     `,
     )
-    .eq("transactions.payer_id", user.id)
+    .eq("debtor_id", user.id)
     .eq("settlement_status", "pending")
 
-  // Transform the data to match the component interface
   const formattedRequests =
     pendingRequests?.map((req: any) => ({
       id: req.id,
       amount: req.amount,
-      debtor: req.profiles,
-      personId: req.profiles.id,
+      debtor: req.transactions.profiles,
+      personId: req.transactions.payer_id,
     })) || []
 
   return (

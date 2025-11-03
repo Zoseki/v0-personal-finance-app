@@ -19,16 +19,18 @@ export default async function DashboardPage() {
   // Get current user profile
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
+  // and show debtor info (person who needs to pay back)
   const { data: pendingRequests } = await supabase
     .from("transaction_splits")
     .select(
       `
       id,
       amount,
-      transactions(id, payer_id, profiles:payer_id(id, display_name, avatar_url))
+      debtor_id,
+      transactions(id, debtor_id, profiles:debtor_id(id, display_name, avatar_url))
     `,
     )
-    .eq("debtor_id", user.id)
+    .eq("transactions.payer_id", user.id)
     .eq("settlement_status", "pending")
 
   const formattedRequests =
@@ -36,7 +38,7 @@ export default async function DashboardPage() {
       id: req.id,
       amount: req.amount,
       debtor: req.transactions.profiles,
-      personId: req.transactions.payer_id,
+      personId: req.debtor_id,
     })) || []
 
   return (

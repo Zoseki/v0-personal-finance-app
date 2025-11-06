@@ -19,26 +19,26 @@ export default async function DashboardPage() {
   // Get current user profile
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
-  // and show debtor info (person who needs to pay back)
   const { data: pendingRequests } = await supabase
     .from("transaction_splits")
     .select(
       `
       id,
       amount,
-      debtor_id,
-      transactions(id, debtor_id, profiles:debtor_id(id, display_name, avatar_url))
+      transactions(id, payer_id),
+      profiles:debtor_id(id, display_name, avatar_url)
     `,
     )
     .eq("transactions.payer_id", user.id)
     .eq("settlement_status", "pending")
 
+  // Transform the data to match the component interface
   const formattedRequests =
     pendingRequests?.map((req: any) => ({
       id: req.id,
       amount: req.amount,
-      debtor: req.transactions.profiles,
-      personId: req.debtor_id,
+      debtor: req.profiles,
+      personId: req.profiles.id,
     })) || []
 
   return (

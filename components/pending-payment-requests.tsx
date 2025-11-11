@@ -45,7 +45,7 @@ export function PendingPaymentRequests({ requests }: { requests: PendingRequest[
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">
-                      {request.debtor?.display_name || "User"} gửi yêu cầu thanh toán từ{" "}
+                      //{request.debtor?.display_name || "User"} {" "}
                       {request.payer?.display_name || "Unknown"}
                     </p>
                     <p className="text-xs text-muted-foreground">Chờ xác nhận</p>

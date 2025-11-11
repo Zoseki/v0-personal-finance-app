@@ -33,7 +33,6 @@ export default async function DashboardPage() {
       )
     `,
     )
-    .eq("debtor_id", user.id)
     .eq("settlement_status", "pending")
 
   console.log("[v0] Current user ID:", user.id)

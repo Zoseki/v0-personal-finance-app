@@ -11,6 +11,11 @@ interface PendingRequest {
     display_name: string
     avatar_url: string | null
   }
+  payer: {
+    id: string
+    display_name: string
+    avatar_url: string | null
+  }
   personId: string
 }
 
@@ -39,14 +44,14 @@ export function PendingPaymentRequests({ requests }: { requests: PendingRequest[
                     <AvatarFallback>{request.debtor.display_name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{request.debtor.display_name}</p>
-                    <p className="text-xs text-muted-foreground">Gửi yêu cầu thanh toán</p>
+                    <p className="font-medium text-sm truncate">
+                      {request.debtor.display_name} gửi yêu cầu thanh toán từ {request.payer.display_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Chờ xác nhận</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-orange-600 dark:text-orange-400">
-                    {(request.amount).toFixed(0)}k
-                  </p>
+                  <p className="font-semibold text-orange-600 dark:text-orange-400">{request.amount.toFixed(0)}k</p>
                 </div>
               </div>
             </Link>

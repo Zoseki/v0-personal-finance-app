@@ -25,12 +25,16 @@ export default async function DashboardPage() {
       `
       id,
       amount,
-      transactions(id, payer_id),
+      transaction_id,
+      transactions!inner(id, payer_id),
       profiles:debtor_id(id, display_name, avatar_url)
     `,
     )
     .eq("transactions.payer_id", user.id)
     .eq("settlement_status", "pending")
+
+  console.log("[v0] Current user ID:", user.id)
+  console.log("[v0] Pending requests data:", pendingRequests)
 
   // Transform the data to match the component interface
   const formattedRequests =
@@ -40,6 +44,8 @@ export default async function DashboardPage() {
       debtor: req.profiles,
       personId: req.profiles.id,
     })) || []
+
+  console.log("[v0] Formatted requests:", formattedRequests)
 
   return (
     <div className="min-h-screen bg-muted/30">

@@ -26,7 +26,11 @@ export default async function DashboardPage() {
       id,
       amount,
       transaction_id,
-      transactions:transaction_id(id, payer_id, profiles:payer_id(id, display_name, avatar_url))
+      transactions(
+        id,
+        payer_id,
+        profiles:payer_id(id, display_name, avatar_url)
+      )
     `,
     )
     .eq("debtor_id", user.id)

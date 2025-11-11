@@ -25,6 +25,7 @@ export default async function DashboardPage() {
       `
       id,
       amount,
+      debtor_id,
       transaction_id,
       transactions(
         id,
@@ -42,8 +43,13 @@ export default async function DashboardPage() {
     pendingRequests?.map((req: any) => ({
       id: req.id,
       amount: req.amount,
-      debtor: req.transactions.profiles,
-      personId: req.transactions.payer_id,
+      debtor: {
+        id: req.debtor_id,
+        display_name: "User",
+        avatar_url: null,
+      },
+      payer: req.transactions?.profiles || { id: "", display_name: "Unknown", avatar_url: null },
+      personId: req.debtor_id,
     })) || []
 
   return (

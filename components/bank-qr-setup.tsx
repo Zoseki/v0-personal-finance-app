@@ -1,7 +1,6 @@
 "use client"
 
-import React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,7 +45,7 @@ export function BankQRSetup() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const supabase = createClient()
-  const qrRef = React.useRef<HTMLDivElement>(null)
+  const qrRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadBankInfo()

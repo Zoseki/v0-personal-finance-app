@@ -250,7 +250,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <BankQRSetup />
         </div>
       </div>
     </div>

@@ -64,6 +64,7 @@ export function BankQRSetup() {
       .single()
 
     if (profile) {
+      console.log(profile)
       setBankCode(profile.bank_name || "")
       setAccountNumber(profile.bank_account_number || "")
       setAccountHolder(profile.bank_account_holder || "")

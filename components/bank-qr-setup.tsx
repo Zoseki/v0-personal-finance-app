@@ -134,20 +134,47 @@ export function BankQRSetup() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="bank-select">Chọn ngân hàng</Label>
+            <select
+              id="bank-select"
+              value={bankCode}
+              onChange={(e) => setBankCode(e.target.value)}
+              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">-- Chọn ngân hàng --</option>
+              {VIETNAMESE_BANKS.map((bank) => (
+                <option key={bank.code} value={bank.code}>
+                  {bank.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          <div className="grid gap-2">
+            <Label htmlFor="account-number">Số tài khoản</Label>
+            <Input
+              id="account-number"
+              type="text"
+              placeholder="Nhập số tài khoản"
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="account-holder">Chủ tài khoản</Label>
+            <Input
+              id="account-holder"
+              type="text"
+              placeholder="Nhập tên chủ tài khoản"
+              value={accountHolder}
+              onChange={(e) => setAccountHolder(e.target.value)}
+            />
+          </div>
         </div>
 
-        {qrValue && (
-          <div className="flex flex-col items-center gap-4 p-4 bg-muted rounded-lg">
-            <div ref={qrRef}>
-              <QRCode value={qrValue} size={256} level="H" includeMargin={true} />
-            </div>
-            <Button onClick={downloadQR} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Tải QR code
-            </Button>
-          </div>
-        )}
+        
 
         {error && <p className="text-sm text-destructive">{error}</p>}
         {success && <p className="text-sm text-green-600">{success}</p>}

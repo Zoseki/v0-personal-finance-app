@@ -31,7 +31,8 @@ export default async function DashboardPage() {
         id,
         payer_id,
         profiles:payer_id(id, display_name, avatar_url)
-      )
+      ),
+      profiles:debtor_id(id, display_name, avatar_url)
     `,
     )
     .eq("settlement_status", "pending")
@@ -43,11 +44,7 @@ export default async function DashboardPage() {
     pendingRequests?.map((req: any) => ({
       id: req.id,
       amount: req.amount,
-      debtor: {
-        id: req.debtor_id,
-        display_name: "User",
-        avatar_url: null,
-      },
+      debtor: req.profiles || { id: req.debtor_id, display_name: "User", avatar_url: null },
       payer: req.transactions?.profiles || { id: "", display_name: "Unknown", avatar_url: null },
       personId: req.debtor_id,
     })) || []

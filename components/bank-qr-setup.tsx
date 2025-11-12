@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, Download } from "lucide-react"
 
 const VIETNAMESE_BANKS = [
   { code: "970405", name: "Ngân hàng Công thương Việt Nam (Vietcombank)" },
@@ -44,6 +44,7 @@ export function BankQRSetup() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [qrUrl, setQrUrl] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function BankQRSetup() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("bank_name, bank_account_number, bank_account_holder")
+      .select("bank_name, bank_account_number, bank_account_holder, bank_qr_code")
       .eq("id", user.id)
       .single()
 
@@ -68,6 +69,9 @@ export function BankQRSetup() {
       setBankName(bank?.name || "")
       setAccountNumber(profile.bank_account_number || "")
       setAccountHolder(profile.bank_account_holder || "")
+      if (profile.bank_qr_code) {
+        setQrUrl(profile.bank_qr_code)
+      }
     }
   }
 
@@ -87,16 +91,22 @@ export function BankQRSetup() {
       } = await supabase.auth.getUser()
       if (!user) throw new Error("Không tìm thấy người dùng")
 
+      // Generate QR code URL using public API
+      const paymentString = `${bankCode}|${accountNumber}|${accountHolder}`.replace(/\s/g, "")
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(paymentString)}`
+
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
           bank_name: bankCode,
           bank_account_number: accountNumber,
           bank_account_holder: accountHolder,
+          bank_qr_code: qrCodeUrl,
         })
         .eq("id", user.id)
 
       if (updateError) throw updateError
+      setQrUrl(qrCodeUrl)
       setSuccess("Lưu thông tin ngân hàng thành công!")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Đã xảy ra lỗi")
@@ -110,6 +120,16 @@ export function BankQRSetup() {
     navigator.clipboard.writeText(paymentInfo)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const downloadQR = () => {
+    if (!qrUrl) return
+    const a = document.createElement("a")
+    a.href = qrUrl
+    a.download = `qr-${accountNumber}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   return (
@@ -189,6 +209,16 @@ export function BankQRSetup() {
                   Sao chép thông tin
                 </>
               )}
+            </Button>
+          </div>
+        )}
+
+        {qrUrl && (
+          <div className="flex flex-col items-center gap-4 p-4 bg-muted rounded-lg">
+            <img src={qrUrl || "/placeholder.svg"} alt="QR Code" className="w-64 h-64" />
+            <Button onClick={downloadQR} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Tải QR code
             </Button>
           </div>
         )}

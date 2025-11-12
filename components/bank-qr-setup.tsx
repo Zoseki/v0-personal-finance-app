@@ -1,13 +1,12 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import QRCode from "qrcode.react"
-import { Download } from "lucide-react"
+import { Copy, Check } from "lucide-react"
 
 const VIETNAMESE_BANKS = [
   { code: "970405", name: "Ngân hàng Công thương Việt Nam (Vietcombank)" },
@@ -38,14 +37,14 @@ const VIETNAMESE_BANKS = [
 
 export function BankQRSetup() {
   const [bankCode, setBankCode] = useState("")
+  const [bankName, setBankName] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
   const [accountHolder, setAccountHolder] = useState("")
-  const [qrValue, setQrValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const supabase = createClient()
-  const qrRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadBankInfo()
@@ -63,22 +62,13 @@ export function BankQRSetup() {
       .eq("id", user.id)
       .single()
 
-    if (profile) {
-      console.log(profile)
-      setBankCode(profile.bank_name || "")
+    if (profile && profile.bank_name) {
+      setBankCode(profile.bank_name)
+      const bank = VIETNAMESE_BANKS.find((b) => b.code === profile.bank_name)
+      setBankName(bank?.name || "")
       setAccountNumber(profile.bank_account_number || "")
       setAccountHolder(profile.bank_account_holder || "")
-      if (profile.bank_name && profile.bank_account_number) {
-        generateQR(profile.bank_name, profile.bank_account_number, profile.bank_account_holder)
-      }
     }
-  }
-
-  const generateQR = (code: string, account: string, holder: string) => {
-    // Use a simple format: bankcode|accountnumber|accountholder
-    // This can be parsed by mobile banking apps or used as reference
-    const qrString = `${code}|${account}|${holder}`
-    setQrValue(qrString)
   }
 
   const handleSave = async () => {
@@ -107,7 +97,6 @@ export function BankQRSetup() {
         .eq("id", user.id)
 
       if (updateError) throw updateError
-      generateQR(bankCode, accountNumber, accountHolder)
       setSuccess("Lưu thông tin ngân hàng thành công!")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Đã xảy ra lỗi")
@@ -116,21 +105,18 @@ export function BankQRSetup() {
     }
   }
 
-  const downloadQR = () => {
-    const canvas = qrRef.current?.querySelector("canvas") as HTMLCanvasElement
-    if (canvas) {
-      const link = document.createElement("a")
-      link.href = canvas.toDataURL("image/png")
-      link.download = "bank-qr.png"
-      link.click()
-    }
+  const copyPaymentInfo = () => {
+    const paymentInfo = `${bankName}\nSố TK: ${accountNumber}\nChủ TK: ${accountHolder}`
+    navigator.clipboard.writeText(paymentInfo)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Thông tin ngân hàng</CardTitle>
-        <CardDescription>Thiết lập QR code chuyển khoản để người khác dễ dàng thanh toán</CardDescription>
+        <CardDescription>Thiết lập thông tin chuyển khoản để người khác dễ dàng thanh toán</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid gap-4">
@@ -139,7 +125,11 @@ export function BankQRSetup() {
             <select
               id="bank-select"
               value={bankCode}
-              onChange={(e) => setBankCode(e.target.value)}
+              onChange={(e) => {
+                setBankCode(e.target.value)
+                const bank = VIETNAMESE_BANKS.find((b) => b.code === e.target.value)
+                setBankName(bank?.name || "")
+              }}
               className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">-- Chọn ngân hàng --</option>
@@ -174,7 +164,34 @@ export function BankQRSetup() {
           </div>
         </div>
 
-        
+        {bankName && accountNumber && (
+          <div className="flex flex-col gap-4 p-4 bg-muted rounded-lg">
+            <div className="space-y-2 text-sm">
+              <p>
+                <span className="font-semibold">Ngân hàng:</span> {bankName}
+              </p>
+              <p>
+                <span className="font-semibold">Số tài khoản:</span> {accountNumber}
+              </p>
+              <p>
+                <span className="font-semibold">Chủ tài khoản:</span> {accountHolder}
+              </p>
+            </div>
+            <Button onClick={copyPaymentInfo} variant="outline" size="sm" className="w-full bg-transparent">
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Đã sao chép
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Sao chép thông tin
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
         {success && <p className="text-sm text-green-600">{success}</p>}

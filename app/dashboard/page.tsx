@@ -37,17 +37,21 @@ export default async function DashboardPage() {
     )
     .eq("settlement_status", "pending")
 
+  const formattedRequests =
+    pendingRequests
+      ?.map((req: any) => ({
+        id: req.id,
+        amount: req.amount,
+        debtor: req.profiles || { id: req.debtor_id, display_name: "User", avatar_url: null },
+        payer: req.transactions?.profiles || { id: "", display_name: "Unknown", avatar_url: null },
+        personId: req.debtor_id,
+        payerId: req.transactions?.payer_id, // thêm payerId để filter
+      }))
+      .filter((req: any) => req.payerId === user.id) || [] // chỉ hiển thị yêu cầu gửi tới user hiện tại
+
   console.log("[v0] Current user ID:", user.id)
   console.log("[v0] Pending requests data:", pendingRequests)
-
-  const formattedRequests =
-    pendingRequests?.map((req: any) => ({
-      id: req.id,
-      amount: req.amount,
-      debtor: req.profiles || { id: req.debtor_id, display_name: "User", avatar_url: null },
-      payer: req.transactions?.profiles || { id: "", display_name: "Unknown", avatar_url: null },
-      personId: req.debtor_id,
-    })) || []
+  console.log("[v0] Filtered requests:", formattedRequests)
 
   return (
     <div className="min-h-screen bg-muted/30">

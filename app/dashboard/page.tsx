@@ -45,9 +45,22 @@ export default async function DashboardPage() {
         debtor: req.profiles || { id: req.debtor_id, display_name: "User", avatar_url: null },
         payer: req.transactions?.profiles || { id: "", display_name: "Unknown", avatar_url: null },
         personId: req.debtor_id,
-        payerId: req.transactions?.payer_id, // thêm payerId để filter
+        payerId: req.transactions?.payer_id,
       }))
-      .filter((req: any) => req.payerId === user.id) || [] // chỉ hiển thị yêu cầu gửi tới user hiện tại
+      .filter((req: any) => req.payerId === user.id)
+      .reduce((acc: any[], req: any) => {
+        const existingGroup = acc.find((item) => item.debtor.id === req.debtor.id)
+        if (existingGroup) {
+          existingGroup.amount += req.amount
+          existingGroup.ids.push(req.id)
+        } else {
+          acc.push({
+            ...req,
+            ids: [req.id],
+          })
+        }
+        return acc
+      }, []) || []
 
   console.log("[v0] Current user ID:", user.id)
   console.log("[v0] Pending requests data:", pendingRequests)

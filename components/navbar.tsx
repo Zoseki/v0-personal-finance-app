@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { LogOut, Plus, Home, Wallet, Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function Navbar() {
   const router = useRouter()
@@ -82,6 +83,9 @@ export function Navbar() {
           <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
+
+          {/* Theme Toggle Button */}
+          <ThemeToggle />
 
           {/* Profile Avatar */}
           <Button variant="ghost" size="sm" asChild className="hidden sm:flex">

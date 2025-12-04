@@ -103,8 +103,8 @@ export default function AddExpensePage() {
         const debtorId = split.debtor_id
         const newAmount = Number.parseFloat(split.amount)
 
-        // Check if the debtor (person who will owe me) has existing debts FROM ME to THEM
-        // i.e., I owe them money from previous transactions
+        // Check if the debtor (person who will owe me) has existing debts TO currentUserId (B)
+        // i.e., A is the debtor and B (currentUserId) is the payer
         const { data: existingReverseDebts } = await supabase
           .from("transaction_splits")
           .select(`
@@ -115,8 +115,8 @@ export default function AddExpensePage() {
             transaction_id,
             transactions!inner(payer_id)
           `)
-          .eq("debtor_id", currentUserId) // I am the debtor
-          .eq("transactions.payer_id", debtorId) // They are the payer (I owe them)
+          .eq("debtor_id", debtorId) // A is the debtor
+          .eq("transactions.payer_id", currentUserId) // B (me) am the payer
           .eq("is_settled", false)
           .is("settlement_status", null)
 
@@ -124,7 +124,7 @@ export default function AddExpensePage() {
         const offsetTransactions: { splitId: string; offsetAmount: number }[] = []
 
         if (existingReverseDebts && existingReverseDebts.length > 0) {
-          // Calculate total reverse debt (how much I owe them)
+          // Calculate total reverse debt (A owes B)
           for (const reverseDebt of existingReverseDebts) {
             if (remainingAmount <= 0) break
 

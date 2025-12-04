@@ -99,30 +99,120 @@ export default function AddExpensePage() {
         throw new Error("Vui lòng thêm ít nhất một người với đầy đủ thông tin")
       }
 
-      const total = validSplits.reduce((sum, s) => sum + Number.parseFloat(s.amount), 0)
+      for (const split of validSplits) {
+        const debtorId = split.debtor_id
+        const newAmount = Number.parseFloat(split.amount)
 
-      const { data: transaction, error: transactionError } = await supabase
-        .from("transactions")
-        .insert({
-          payer_id: currentUserId,
-          description: description || "Chi tiêu",
-          total_amount: total,
-        })
-        .select()
-        .single()
+        // Check if the debtor (person who will owe me) has existing debts FROM ME to THEM
+        // i.e., I owe them money from previous transactions
+        const { data: existingReverseDebts } = await supabase
+          .from("transaction_splits")
+          .select(`
+            id,
+            amount,
+            is_settled,
+            settlement_status,
+            transaction_id,
+            transactions!inner(payer_id)
+          `)
+          .eq("debtor_id", currentUserId) // I am the debtor
+          .eq("transactions.payer_id", debtorId) // They are the payer (I owe them)
+          .eq("is_settled", false)
+          .is("settlement_status", null)
 
-      if (transactionError) throw transactionError
+        let remainingAmount = newAmount
+        const offsetTransactions: { splitId: string; offsetAmount: number }[] = []
 
-      const splitsData = validSplits.map((s) => ({
-        transaction_id: transaction.id,
-        debtor_id: s.debtor_id,
-        item_description: s.item_description,
-        amount: Number.parseFloat(s.amount),
-      }))
+        if (existingReverseDebts && existingReverseDebts.length > 0) {
+          // Calculate total reverse debt (how much I owe them)
+          for (const reverseDebt of existingReverseDebts) {
+            if (remainingAmount <= 0) break
 
-      const { error: splitsError } = await supabase.from("transaction_splits").insert(splitsData)
+            const reverseAmount = reverseDebt.amount
+            const offsetAmount = Math.min(remainingAmount, reverseAmount)
 
-      if (splitsError) throw splitsError
+            offsetTransactions.push({
+              splitId: reverseDebt.id,
+              offsetAmount: offsetAmount,
+            })
+
+            remainingAmount -= offsetAmount
+          }
+        }
+
+        // Process offsets
+        for (const offset of offsetTransactions) {
+          const reverseDebt = existingReverseDebts?.find((d) => d.id === offset.splitId)
+          if (!reverseDebt) continue
+
+          if (offset.offsetAmount >= reverseDebt.amount) {
+            // Fully offset the reverse debt - mark as settled
+            await supabase
+              .from("transaction_splits")
+              .update({
+                is_settled: true,
+                settled_at: new Date().toISOString(),
+                settlement_status: "settled",
+              })
+              .eq("id", offset.splitId)
+          } else {
+            // Partially offset - update the remaining amount
+            await supabase
+              .from("transaction_splits")
+              .update({
+                amount: reverseDebt.amount - offset.offsetAmount,
+              })
+              .eq("id", offset.splitId)
+          }
+
+          // Create a "Khấu trừ" transaction to record the offset
+          const { data: offsetTransaction } = await supabase
+            .from("transactions")
+            .insert({
+              payer_id: currentUserId,
+              description: "Khấu trừ",
+              total_amount: offset.offsetAmount,
+            })
+            .select()
+            .single()
+
+          if (offsetTransaction) {
+            await supabase.from("transaction_splits").insert({
+              transaction_id: offsetTransaction.id,
+              debtor_id: debtorId,
+              item_description: `Khấu trừ từ khoản nợ`,
+              amount: offset.offsetAmount,
+              is_settled: true,
+              settled_at: new Date().toISOString(),
+              settlement_status: "settled",
+            })
+          }
+        }
+
+        // If there's remaining amount after offset, create the new debt
+        if (remainingAmount > 0) {
+          const { data: transaction, error: transactionError } = await supabase
+            .from("transactions")
+            .insert({
+              payer_id: currentUserId,
+              description: description || "Chi tiêu",
+              total_amount: remainingAmount,
+            })
+            .select()
+            .single()
+
+          if (transactionError) throw transactionError
+
+          const { error: splitError } = await supabase.from("transaction_splits").insert({
+            transaction_id: transaction.id,
+            debtor_id: debtorId,
+            item_description: split.item_description,
+            amount: remainingAmount,
+          })
+
+          if (splitError) throw splitError
+        }
+      }
 
       router.push("/dashboard")
       router.refresh()

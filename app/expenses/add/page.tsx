@@ -103,8 +103,7 @@ export default function AddExpensePage() {
         const debtorId = split.debtor_id
         const newAmount = Number.parseFloat(split.amount)
 
-        // Query: Find transaction_splits where A is debtor and B (currentUserId) is payer
-        const { data: existingReverseDebts } = await supabase
+        const { data: allDebtorSplits } = await supabase
           .from("transaction_splits")
           .select(`
             id,
@@ -115,19 +114,21 @@ export default function AddExpensePage() {
             transactions(payer_id)
           `)
           .eq("debtor_id", debtorId)
-          .eq("transactions.payer_id", currentUserId)
 
-        console.log("[v0] Searching for reverse debts for debtor:", debtorId, "payer:", currentUserId)
-        console.log("[v0] Found reverse debts:", existingReverseDebts)
+        console.log("[v0] All splits for debtor:", debtorId, allDebtorSplits)
+
+        const existingReverseDebts =
+          allDebtorSplits?.filter(
+            (split: any) => split.transactions?.payer_id === currentUserId && !split.is_settled,
+          ) || []
+
+        console.log("[v0] Reverse debts after filter:", existingReverseDebts)
 
         let remainingAmount = newAmount
         const offsetTransactions: { splitId: string; offsetAmount: number }[] = []
 
-        if (existingReverseDebts && existingReverseDebts.length > 0) {
+        if (existingReverseDebts.length > 0) {
           for (const reverseDebt of existingReverseDebts) {
-            // Skip already settled debts
-            if (reverseDebt.is_settled || reverseDebt.settlement_status === "settled") continue
-
             if (remainingAmount <= 0) break
 
             const reverseAmount = reverseDebt.amount
@@ -145,11 +146,10 @@ export default function AddExpensePage() {
         }
 
         for (const offset of offsetTransactions) {
-          const reverseDebt = existingReverseDebts?.find((d) => d.id === offset.splitId)
+          const reverseDebt = existingReverseDebts.find((d: any) => d.id === offset.splitId)
           if (!reverseDebt) continue
 
           if (offset.offsetAmount >= reverseDebt.amount) {
-            // Fully offset - mark as settled
             console.log("[v0] Fully offsetting debt:", offset.splitId)
             await supabase
               .from("transaction_splits")
@@ -160,7 +160,6 @@ export default function AddExpensePage() {
               })
               .eq("id", offset.splitId)
           } else {
-            // Partially offset - reduce amount
             console.log(
               "[v0] Partially offsetting debt:",
               offset.splitId,

@@ -103,8 +103,7 @@ export default function AddExpensePage() {
         const debtorId = split.debtor_id
         const newAmount = Number.parseFloat(split.amount)
 
-        // Check if the debtor (person who will owe me) has existing debts TO currentUserId (B)
-        // i.e., A is the debtor and B (currentUserId) is the payer
+        // Query: Find transaction_splits where A is debtor and B (currentUserId) is payer
         const { data: existingReverseDebts } = await supabase
           .from("transaction_splits")
           .select(`
@@ -113,19 +112,22 @@ export default function AddExpensePage() {
             is_settled,
             settlement_status,
             transaction_id,
-            transactions!inner(payer_id)
+            transactions(payer_id)
           `)
-          .eq("debtor_id", debtorId) // A is the debtor
-          .eq("transactions.payer_id", currentUserId) // B (me) am the payer
-          .eq("is_settled", false)
-          .is("settlement_status", null)
+          .eq("debtor_id", debtorId)
+          .eq("transactions.payer_id", currentUserId)
+
+        console.log("[v0] Searching for reverse debts for debtor:", debtorId, "payer:", currentUserId)
+        console.log("[v0] Found reverse debts:", existingReverseDebts)
 
         let remainingAmount = newAmount
         const offsetTransactions: { splitId: string; offsetAmount: number }[] = []
 
         if (existingReverseDebts && existingReverseDebts.length > 0) {
-          // Calculate total reverse debt (A owes B)
           for (const reverseDebt of existingReverseDebts) {
+            // Skip already settled debts
+            if (reverseDebt.is_settled || reverseDebt.settlement_status === "settled") continue
+
             if (remainingAmount <= 0) break
 
             const reverseAmount = reverseDebt.amount
@@ -137,16 +139,18 @@ export default function AddExpensePage() {
             })
 
             remainingAmount -= offsetAmount
+
+            console.log("[v0] Offset:", offsetAmount, "from debt:", reverseAmount, "Remaining:", remainingAmount)
           }
         }
 
-        // Process offsets
         for (const offset of offsetTransactions) {
           const reverseDebt = existingReverseDebts?.find((d) => d.id === offset.splitId)
           if (!reverseDebt) continue
 
           if (offset.offsetAmount >= reverseDebt.amount) {
-            // Fully offset the reverse debt - mark as settled
+            // Fully offset - mark as settled
+            console.log("[v0] Fully offsetting debt:", offset.splitId)
             await supabase
               .from("transaction_splits")
               .update({
@@ -156,7 +160,13 @@ export default function AddExpensePage() {
               })
               .eq("id", offset.splitId)
           } else {
-            // Partially offset - update the remaining amount
+            // Partially offset - reduce amount
+            console.log(
+              "[v0] Partially offsetting debt:",
+              offset.splitId,
+              "remaining:",
+              reverseDebt.amount - offset.offsetAmount,
+            )
             await supabase
               .from("transaction_splits")
               .update({
@@ -164,33 +174,11 @@ export default function AddExpensePage() {
               })
               .eq("id", offset.splitId)
           }
-
-          // Create a "Khấu trừ" transaction to record the offset
-          const { data: offsetTransaction } = await supabase
-            .from("transactions")
-            .insert({
-              payer_id: currentUserId,
-              description: "Khấu trừ",
-              total_amount: offset.offsetAmount,
-            })
-            .select()
-            .single()
-
-          if (offsetTransaction) {
-            await supabase.from("transaction_splits").insert({
-              transaction_id: offsetTransaction.id,
-              debtor_id: debtorId,
-              item_description: `Khấu trừ từ khoản nợ`,
-              amount: offset.offsetAmount,
-              is_settled: true,
-              settled_at: new Date().toISOString(),
-              settlement_status: "settled",
-            })
-          }
         }
 
         // If there's remaining amount after offset, create the new debt
         if (remainingAmount > 0) {
+          console.log("[v0] Creating new debt with remaining amount:", remainingAmount)
           const { data: transaction, error: transactionError } = await supabase
             .from("transactions")
             .insert({
@@ -203,20 +191,50 @@ export default function AddExpensePage() {
 
           if (transactionError) throw transactionError
 
+          const itemDesc =
+            offsetTransactions.length > 0 ? `Khấu trừ - ${split.item_description}` : split.item_description
+
           const { error: splitError } = await supabase.from("transaction_splits").insert({
             transaction_id: transaction.id,
             debtor_id: debtorId,
-            item_description: split.item_description,
+            item_description: itemDesc,
             amount: remainingAmount,
           })
 
           if (splitError) throw splitError
+        } else if (offsetTransactions.length > 0) {
+          console.log("[v0] Amount fully offset, creating offset record")
+          const { data: offsetTransaction, error: offsetTxError } = await supabase
+            .from("transactions")
+            .insert({
+              payer_id: currentUserId,
+              description: "Khấu trừ",
+              total_amount: newAmount,
+            })
+            .select()
+            .single()
+
+          if (offsetTxError) throw offsetTxError
+
+          if (offsetTransaction) {
+            await supabase.from("transaction_splits").insert({
+              transaction_id: offsetTransaction.id,
+              debtor_id: debtorId,
+              item_description: "Khấu trừ - Thanh toán toàn bộ",
+              amount: newAmount,
+              is_settled: true,
+              settled_at: new Date().toISOString(),
+              settlement_status: "settled",
+            })
+          }
         }
       }
 
+      console.log("[v0] Expense saved successfully")
       router.push("/dashboard")
       router.refresh()
     } catch (error: unknown) {
+      console.log("[v0] Error:", error)
       setError(error instanceof Error ? error.message : "Đã xảy ra lỗi")
     } finally {
       setIsLoading(false)
